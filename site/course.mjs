@@ -1,7 +1,7 @@
 export function pageFor(checkout) {
   let status;
   if (checkout.type === "checkout.session.completed" && checkout.paid === true) {
-    status = "unpaid";
+    status = "paid";
   } else {
     status = "waiting";
   }

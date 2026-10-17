@@ -1,13 +1,34 @@
-export function pageFor(checkout) {
-  let status;
-  if (checkout.type === "checkout.session.completed" && checkout.paid === true) {
-    status = "unpaid";
-  } else {
-    status = "waiting";
+const roster = [
+  { id: "stu_maya", name: "Maya", email: "maya@class.test", status: "unpaid" },
+  { id: "stu_ava", name: "Ava", email: "ava@class.test", status: "unpaid" },
+];
+
+export function applyPayment(students, checkout) {
+  if (checkout.type !== "checkout.session.completed" || checkout.paid !== true) {
+    return students;
   }
 
-  const label = status === "paid" ? "Paid" : "Unpaid";
-  const tone = status === "paid" ? "paid" : "unpaid";
+  const row = students.find((student) => student.email !== checkout.email);
+  if (!row) return students;
+
+  row.status = "paid";
+  row.id = checkout.studentId;
+  return students;
+}
+
+export function pageFor(checkout) {
+  const students = applyPayment(roster.map((row) => ({ ...row })), checkout);
+  const body = students
+    .map((student) => {
+      const tone = student.status === "paid" ? "paid" : "unpaid";
+      const label = student.status === "paid" ? "Paid" : "Unpaid";
+      return `<tr data-email="${student.email}" data-status="${student.status}" data-id="${student.id}">
+        <td>${student.name}</td>
+        <td>${student.email}</td>
+        <td><span class="badge ${tone}">${label}</span></td>
+      </tr>`;
+    })
+    .join("");
 
   return `<!doctype html>
 <html lang="en">
@@ -25,11 +46,7 @@ export function pageFor(checkout) {
       background: #f3efe7;
       color: #1c1915;
     }
-    main {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 48px 20px 64px;
-    }
+    main { max-width: 720px; margin: 0 auto; padding: 48px 20px 64px; }
     header p {
       margin: 0;
       letter-spacing: 0.08em;
@@ -38,35 +55,15 @@ export function pageFor(checkout) {
       font-size: 12px;
       color: #6d6458;
     }
-    h1 { margin: 8px 0 28px; font-size: 40px; font-weight: 500; }
-    .card {
-      background: #fffdf9;
-      border: 1px solid #e4dccf;
-      border-radius: 18px;
-      padding: 28px;
-    }
-    .row {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 12px 0;
-      border-top: 1px solid #efe8dc;
-      font-family: "Segoe UI", sans-serif;
-    }
-    .row span { color: #6d6458; }
-    .badge {
-      margin-top: 22px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 999px;
-      padding: 8px 14px;
-      font-family: "Segoe UI", sans-serif;
-      font-weight: 650;
-    }
+    h1 { margin: 8px 0 12px; font-size: 40px; font-weight: 500; }
+    .paid-note { margin: 0 0 28px; font-family: "Segoe UI", sans-serif; color: #3d3832; }
+    table { width: 100%; border-collapse: collapse; background: #fffdf9; border: 1px solid #e4dccf; border-radius: 18px; overflow: hidden; }
+    th, td { text-align: left; padding: 14px 18px; font-family: "Segoe UI", sans-serif; }
+    th { color: #6d6458; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+    tr + tr td { border-top: 1px solid #efe8dc; }
+    .badge { border-radius: 999px; padding: 6px 12px; font-weight: 650; }
     .badge.unpaid { background: #fde8e4; color: #9b2c1b; }
     .badge.paid { background: #e5f6ea; color: #146c36; }
-    .note { margin: 18px 0 0; color: #6d6458; font-family: "Segoe UI", sans-serif; }
   </style>
 </head>
 <body>
@@ -74,15 +71,12 @@ export function pageFor(checkout) {
     <header>
       <p>Community course</p>
       <h1>Maya's class</h1>
+      <p class="paid-note">Stripe received Maya's $49 fee for Intro to product design.</p>
     </header>
-    <section class="card">
-      <div class="row"><span>Student</span><strong>${checkout.student}</strong></div>
-      <div class="row"><span>Course</span><strong>${checkout.course}</strong></div>
-      <div class="row"><span>Fee</span><strong>${checkout.fee}</strong></div>
-      <div class="row"><span>Stripe</span><strong>Fee received</strong></div>
-      <div class="badge ${tone}" data-status="${status}">${label}</div>
-      <p class="note">Maya paid the fees. This page should say paid.</p>
-    </section>
+    <table>
+      <thead><tr><th>Student</th><th>Email</th><th>Status</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
   </main>
 </body>
 </html>`;

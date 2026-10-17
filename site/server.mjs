@@ -5,6 +5,8 @@ const checkout = {
   type: "checkout.session.completed",
   paid: true,
   student: "Maya",
+  email: "maya@class.test",
+  studentId: "stu_maya",
   course: "Intro to product design",
   fee: "$49",
 };

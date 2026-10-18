@@ -8,7 +8,7 @@ export function applyPayment(students, checkout) {
     return students;
   }
 
-  const row = students.find((student) => student.email !== checkout.email);
+  const row = students.find((student) => student.email === checkout.email);
   if (!row) return students;
 
   row.status = "paid";
